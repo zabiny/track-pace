@@ -45,7 +45,7 @@ h1 { font-family: var(--display); font-weight: 700; font-size: clamp(34px, 7vw, 
 .lanes { display: grid; gap: 12px; }
 .lane {
   background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
-  display: grid; grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1.25fr); overflow: hidden;
+  display: grid; grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1.7fr); overflow: hidden;
 }
 .lane-no {
   background: var(--tartan); color: var(--lane); font-family: var(--display); font-weight: 700;
@@ -65,11 +65,11 @@ h1 { font-family: var(--display); font-weight: 700; font-size: clamp(34px, 7vw, 
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .hint { font-size: 12px; color: var(--muted); }
 
-.splits { border-left: 1px solid var(--line); display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); }
-.split { padding: 14px 10px; display: grid; align-content: center; justify-items: center; gap: 2px; text-align: center; }
+.splits { border-left: 1px solid var(--line); display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); }
+.split { padding: 14px 6px; display: grid; align-content: center; justify-items: center; gap: 2px; text-align: center; }
 .split + .split { border-left: 1px dashed var(--line); }
 .split .dist { font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .1em; font-size: 13px; color: var(--muted); }
-.split .t { font: 700 clamp(22px, 4.2vw, 30px) var(--mono); font-variant-numeric: tabular-nums; }
+.split .t { font: 700 clamp(20px, 3.4vw, 26px) var(--mono); font-variant-numeric: tabular-nums; }
 .split.lap { background: var(--tartan-soft); }
 .split.lap .t { color: var(--tartan); }
 .split .sub { font-size: 12px; color: var(--muted); }
@@ -114,8 +114,8 @@ button.primary { background: var(--fg); color: var(--bg); border-color: var(--fg
   <button class="primary" id="add" type="button">+ Add athlete</button>
 
   <div class="note">
-    <div><b>How it's counted:</b> base pace = 3 km time ÷ 3. Training pace per km = base + offset. 400 m lap = 0.4 × km pace, 200 m = 0.2 × km pace.</div>
-    <div>Time formats: <b>12:30</b>, <b>12:30.5</b> or seconds like <b>750</b>. Your list is kept in this browser only.</div>
+    <div><b>How it's counted:</b> base pace = 3 km time ÷ 3. Training pace per km = base + offset. 400 m lap = 0.4 × km pace, 200 m = 0.2 ×, 100 m = 0.1 ×.</div>
+    <div>Time formats: <b>12:30</b>, <b>12:30.5</b> or seconds like <b>750</b>. Your list is saved only in this browser on this device. Nobody else can see it, and nothing is sent to a server.</div>
   </div>
 </div>
 
@@ -159,7 +159,7 @@ function calc(a) {
   if (isNaN(d)) return { error: "Offset should be seconds, e.g. 15 or -5" };
   const km = t3 / 3 + d;
   if (!(km > 0)) return { error: "Offset makes the pace zero or negative" };
-  return { base: t3 / 3, km, m400: km * 0.4, m200: km * 0.2 };
+  return { base: t3 / 3, km, m400: km * 0.4, m200: km * 0.2, m100: km * 0.1 };
 }
 
 const lanesEl = document.getElementById("lanes");
@@ -205,7 +205,8 @@ function renderSplits(i) {
   box.innerHTML = `
     <div class="split"><span class="dist">1 km</span><span class="t">${fmt(r.km, 0)}</span><span class="sub">pace</span></div>
     <div class="split lap"><span class="dist">400 m</span><span class="t">${fmt(r.m400, 1)}</span><span class="sub">1 lap</span></div>
-    <div class="split"><span class="dist">200 m</span><span class="t">${fmt(r.m200, 1)}</span><span class="sub">½ lap</span></div>`;
+    <div class="split"><span class="dist">200 m</span><span class="t">${fmt(r.m200, 1)}</span><span class="sub">½ lap</span></div>
+    <div class="split"><span class="dist">100 m</span><span class="t">${fmt(r.m100, 1)}</span><span class="sub">¼ lap</span></div>`;
   base.textContent = `Race pace ${fmt(r.base, 0)}/km · ${fmt(r.base * 0.4, 1)}/lap`;
 }
 
