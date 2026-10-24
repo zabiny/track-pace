@@ -63,6 +63,9 @@ h1 { font-family: var(--display); font-weight: 700; font-size: clamp(34px, 7vw, 
 .field input:focus-visible { outline: 2px solid var(--tartan); outline-offset: 1px; border-color: transparent; }
 .field input[aria-invalid="true"] { border-color: var(--tartan); }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.with-btn { display: flex; gap: 6px; }
+.with-btn input { min-width: 0; }
+.with-btn button { padding: 0 12px; font: 700 18px var(--mono); flex: none; }
 .hint { font-size: 12px; color: var(--muted); }
 
 .splits { border-left: 1px solid var(--line); display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); }
@@ -157,8 +160,8 @@ const T = {
     lede: "Zadej svůj čas na 3000 m nebo 1500 m a o kolik sekund na km má být dnešní trénink pomalejší (+) nebo rychlejší (−). Časy se přepočítají hned při psaní.",
     add: "+ Přidat běžce",
     how: "<b>Jak se počítá:</b> základní tempo = čas na zvolenou trať ÷ její délka v km (3 nebo 1,5). Tréninkové tempo na km = základ + odchylka. Kolo 400 m = 0,4 × tempo na km, 200 m = 0,2 ×, 100 m = 0,1 ×.",
-    formats: "Formát času: <b>12:30</b>, <b>12:30,5</b> nebo sekundy, např. <b>750</b>. Seznam se ukládá jen v tomto prohlížeči na tomto zařízení. Nikdo jiný ho nevidí a nic se neposílá na server.",
-    lanes: "Běžci", athlete: "Běžec", namePh: "Jméno", tTime: d => `Čas na ${d} m`, distLabel: "Základní trať", diff: "Odchylka s/km", remove: "Odebrat",
+    formats: "Čas stačí psát jen číslicemi: <b>1230</b> = 12:30, <b>1230,5</b> = 12:30,5. Dvojtečka funguje taky. Znaménko odchylky přepneš tlačítkem <b>±</b>. Seznam se ukládá jen v tomto prohlížeči na tomto zařízení. Nikdo jiný ho nevidí a nic se neposílá na server.",
+    lanes: "Běžci", athlete: "Běžec", namePh: "Jméno", tTime: d => `Čas na ${d} m`, distLabel: "Základní trať", diff: "Odchylka s/km", remove: "Odebrat", sign: "Změnit znaménko (pomaleji / rychleji)",
     pace: "tempo", lap: "1 kolo", half: "½ kola", quarter: "¼ kola",
     base: (km, lap) => `Závodní tempo ${km}/km · ${lap}/kolo`,
     errT3: d => `Zadej čas na ${d} m, např. ${DISTS[d].ph}`,
@@ -174,8 +177,8 @@ const T = {
     lede: "Enter each athlete's 3000 m or 1500 m time and how many seconds per km slower (+) or faster (−) today's session should be. Splits update as you type.",
     add: "+ Add athlete",
     how: "<b>How it's counted:</b> base pace = time over the chosen distance ÷ its length in km (3 or 1.5). Training pace per km = base + offset. 400 m lap = 0.4 × km pace, 200 m = 0.2 ×, 100 m = 0.1 ×.",
-    formats: "Time formats: <b>12:30</b>, <b>12:30.5</b> or seconds like <b>750</b>. Your list is saved only in this browser on this device. Nobody else can see it, and nothing is sent to a server.",
-    lanes: "Athletes", athlete: "Athlete", namePh: "Name", tTime: d => `${d} m time`, distLabel: "Base distance", diff: "Offset s/km", remove: "Remove",
+    formats: "Type times as digits only: <b>1230</b> = 12:30, <b>1230.5</b> = 12:30.5. A colon works too. Flip the offset sign with the <b>±</b> button. Your list is saved only in this browser on this device. Nobody else can see it, and nothing is sent to a server.",
+    lanes: "Athletes", athlete: "Athlete", namePh: "Name", tTime: d => `${d} m time`, distLabel: "Base distance", diff: "Offset s/km", remove: "Remove", sign: "Flip sign (slower / faster)",
     pace: "pace", lap: "1 lap", half: "½ lap", quarter: "¼ lap",
     base: (km, lap) => `Race pace ${km}/km · ${lap}/lap`,
     errT3: d => `Enter the ${d} m time, e.g. ${DISTS[d].ph}`,
@@ -203,6 +206,14 @@ function save() { usingSample = false; try { localStorage.setItem(KEY, JSON.stri
 function parseTime(s) {
   s = String(s).trim().replace(",", ".");
   if (!s) return NaN;
+  if (!s.includes(":")) {
+    // digits only: last two whole digits are seconds, e.g. 1230 = 12:30, 1230.5 = 12:30.5
+    if (!/^\d+(\.\d+)?$/.test(s)) return NaN;
+    const [int, frac] = s.split(".");
+    if (int.length <= 2) return parseFloat(s);
+    const sec = parseFloat(int.slice(-2) + (frac ? "." + frac : ""));
+    return sec < 60 ? parseInt(int.slice(0, -2), 10) * 60 + sec : NaN;
+  }
   const parts = s.split(":");
   if (parts.length > 3 || parts.some(p => p === "" || isNaN(p))) return NaN;
   return parts.reduce((acc, p) => acc * 60 + parseFloat(p), 0);
@@ -246,11 +257,14 @@ function laneHTML(a, i) {
       <div class="row2">
         <div class="field">
           <label for="t3-${i}">${t.tTime(dist)}</label>
-          <input id="t3-${i}" data-k="${DISTS[dist].field}" value="${escapeHtml(a[DISTS[dist].field])}" placeholder="${DISTS[dist].ph}" inputmode="decimal" autocomplete="off">
+          <input id="t3-${i}" data-k="${DISTS[dist].field}" value="${escapeHtml(a[DISTS[dist].field])}" placeholder="${DISTS[dist].ph}" inputmode="decimal" autocomplete="off" data-norm="1">
         </div>
         <div class="field">
           <label for="diff-${i}">${t.diff}</label>
-          <input id="diff-${i}" data-k="diff" value="${escapeHtml(a.diff)}" placeholder="+15" inputmode="text" autocomplete="off">
+          <div class="with-btn">
+            <input id="diff-${i}" data-k="diff" value="${escapeHtml(a.diff)}" placeholder="15" inputmode="decimal" autocomplete="off">
+            <button type="button" data-sign="${i}" aria-label="${t.sign}">±</button>
+          </div>
         </div>
       </div>
     </div>
@@ -317,7 +331,22 @@ lanesEl.addEventListener("input", e => {
   if (k !== "name") renderSplits(i);
   save();
 });
+lanesEl.addEventListener("focusout", e => {
+  if (!e.target.dataset.norm) return;
+  const i = +e.target.closest(".lane").dataset.i, k = e.target.dataset.k;
+  const v = parseTime(athletes[i][k]);
+  if (!(v > 0)) return;
+  e.target.value = athletes[i][k] = fmt(v, v % 1 ? 1 : 0);
+  save();
+});
 lanesEl.addEventListener("click", e => {
+  const sg = e.target.dataset.sign;
+  if (sg !== undefined) {
+    const i = +sg, v = String(athletes[i].diff ?? "").trim();
+    athletes[i].diff = v.startsWith("-") ? v.slice(1) : "-" + v.replace(/^\+/, "");
+    document.getElementById(`diff-${i}`).value = athletes[i].diff;
+    renderSplits(i); save(); return;
+  }
   const r = e.target.dataset.remove; if (r === undefined) return;
   athletes.splice(+r, 1); save(); render();
 });
