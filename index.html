@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="cs">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Track Pace Splits</title>
+<title>Tempo na dráze</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>
@@ -98,38 +98,102 @@ button.primary { background: var(--fg); color: var(--bg); border-color: var(--fg
 @media (prefers-reduced-motion: no-preference) {
   .split .t { transition: color .2s; }
 }
+
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.seg { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.seg-label { font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; font-size: 13px; color: var(--muted); }
+.lang, .dist-switch { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+.lang button, .dist-switch button { border: none; border-radius: 0; padding: 5px 10px; font-size: 13px; color: var(--muted); }
+.lang button[aria-pressed="true"], .dist-switch button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
 </style>
 </head>
 <body>
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">400 m track · training splits</div>
-    <h1>Track Pace Splits</h1>
-    <p class="lede">Enter each athlete's 3 km time and how many seconds per km slower (+) or faster (−) today's session should be. Splits update as you type.</p>
+    <div class="topbar">
+      <div class="eyebrow" data-t="eyebrow"></div>
+      <div class="lang" role="group" aria-label="Language / Jazyk">
+        <button type="button" data-lang="cs">CZ</button>
+        <button type="button" data-lang="en">EN</button>
+      </div>
+    </div>
+    <h1 data-t="title"></h1>
+    <p class="lede" data-t="lede"></p>
+    <div class="seg">
+      <span class="seg-label" id="dist-label" data-t="distLabel"></span>
+      <div class="dist-switch" role="group" aria-labelledby="dist-label">
+        <button type="button" data-dist="3000">3000 m</button>
+        <button type="button" data-dist="1500">1500 m</button>
+      </div>
+    </div>
   </header>
 
-  <section class="lanes" id="lanes" aria-label="Athletes"></section>
+  <section class="lanes" id="lanes"></section>
 
-  <button class="primary" id="add" type="button">+ Add athlete</button>
+  <button class="primary" id="add" type="button" data-t="add"></button>
 
   <div class="note">
-    <div><b>How it's counted:</b> base pace = 3 km time ÷ 3. Training pace per km = base + offset. 400 m lap = 0.4 × km pace, 200 m = 0.2 ×, 100 m = 0.1 ×.</div>
-    <div>Time formats: <b>12:30</b>, <b>12:30.5</b> or seconds like <b>750</b>. Your list is saved only in this browser on this device. Nobody else can see it, and nothing is sent to a server.</div>
+    <div data-t="how"></div>
+    <div data-t="formats"></div>
   </div>
 </div>
 
 <script>
 const KEY = "track-pace-v1";
-const SAMPLE = [
-  { name: "Example: Jana", t3: "12:30", diff: "15" },
-  { name: "Example: Petr", t3: "10:45", diff: "-5" },
-];
-let athletes;
-try { athletes = JSON.parse(localStorage.getItem(KEY)) || SAMPLE; } catch { athletes = SAMPLE; }
-athletes = athletes.map(a => ({ ...a }));
+const LANG_KEY = "track-pace-lang";
+const DIST_KEY = "track-pace-dist";
+const DISTS = { 3000: { field: "t3", ph: "12:30" }, 1500: { field: "t15", ph: "5:45" } };
+const T = {
+  cs: {
+    pageTitle: "Tempo na dráze",
+    eyebrow: "Dráha 400 m · tréninkové úseky",
+    title: "Tempo na dráze",
+    lede: "Zadej svůj čas na 3000 m nebo 1500 m a o kolik sekund na km má být dnešní trénink pomalejší (+) nebo rychlejší (−). Časy se přepočítají hned při psaní.",
+    add: "+ Přidat běžce",
+    how: "<b>Jak se počítá:</b> základní tempo = čas na zvolenou trať ÷ její délka v km (3 nebo 1,5). Tréninkové tempo na km = základ + odchylka. Kolo 400 m = 0,4 × tempo na km, 200 m = 0,2 ×, 100 m = 0,1 ×.",
+    formats: "Formát času: <b>12:30</b>, <b>12:30,5</b> nebo sekundy, např. <b>750</b>. Seznam se ukládá jen v tomto prohlížeči na tomto zařízení. Nikdo jiný ho nevidí a nic se neposílá na server.",
+    lanes: "Běžci", athlete: "Běžec", namePh: "Jméno", tTime: d => `Čas na ${d} m`, distLabel: "Základní trať", diff: "Odchylka s/km", remove: "Odebrat",
+    pace: "tempo", lap: "1 kolo", half: "½ kola", quarter: "¼ kola",
+    base: (km, lap) => `Závodní tempo ${km}/km · ${lap}/kolo`,
+    errT3: d => `Zadej čas na ${d} m, např. ${DISTS[d].ph}`,
+    errDiff: "Odchylka v sekundách, např. 15 nebo -5",
+    errNeg: "S touto odchylkou vychází nulové nebo záporné tempo",
+    sample: "Příklad: Jana",
+    dec: ",",
+  },
+  en: {
+    pageTitle: "Track Pace Splits",
+    eyebrow: "400 m track · training splits",
+    title: "Track Pace Splits",
+    lede: "Enter each athlete's 3000 m or 1500 m time and how many seconds per km slower (+) or faster (−) today's session should be. Splits update as you type.",
+    add: "+ Add athlete",
+    how: "<b>How it's counted:</b> base pace = time over the chosen distance ÷ its length in km (3 or 1.5). Training pace per km = base + offset. 400 m lap = 0.4 × km pace, 200 m = 0.2 ×, 100 m = 0.1 ×.",
+    formats: "Time formats: <b>12:30</b>, <b>12:30.5</b> or seconds like <b>750</b>. Your list is saved only in this browser on this device. Nobody else can see it, and nothing is sent to a server.",
+    lanes: "Athletes", athlete: "Athlete", namePh: "Name", tTime: d => `${d} m time`, distLabel: "Base distance", diff: "Offset s/km", remove: "Remove",
+    pace: "pace", lap: "1 lap", half: "½ lap", quarter: "¼ lap",
+    base: (km, lap) => `Race pace ${km}/km · ${lap}/lap`,
+    errT3: d => `Enter the ${d} m time, e.g. ${DISTS[d].ph}`,
+    errDiff: "Offset should be seconds, e.g. 15 or -5",
+    errNeg: "Offset makes the pace zero or negative",
+    sample: "Example: Jana",
+    dec: ".",
+  },
+};
+let lang = "cs";
+try { const l = localStorage.getItem(LANG_KEY); if (T[l]) lang = l; } catch {}
+let dist = "3000";
+try { const d = localStorage.getItem(DIST_KEY); if (DISTS[d]) dist = d; } catch {}
 
-function save() { try { localStorage.setItem(KEY, JSON.stringify(athletes)); } catch {} }
+function sampleAthletes() {
+  return [{ name: T[lang].sample, t3: "12:30", t15: "5:45", diff: "15" }];
+}
+let athletes = null;
+try { athletes = JSON.parse(localStorage.getItem(KEY)); } catch {}
+let usingSample = !Array.isArray(athletes);
+if (usingSample) athletes = sampleAthletes();
+
+function save() { usingSample = false; try { localStorage.setItem(KEY, JSON.stringify(athletes)); } catch {} }
 
 function parseTime(s) {
   s = String(s).trim().replace(",", ".");
@@ -150,36 +214,37 @@ function fmt(sec, decimals) {
   const r = Math.round(sec * f) / f;
   const m = Math.floor(r / 60);
   const s = r - m * 60;
-  const ss = s.toFixed(decimals).padStart(decimals ? 3 + decimals : 2, "0");
+  const ss = s.toFixed(decimals).padStart(decimals ? 3 + decimals : 2, "0").replace(".", T[lang].dec);
   return m ? `${m}:${ss}` : `${ss}`;
 }
 function calc(a) {
-  const t3 = parseTime(a.t3), d = parseDiff(a.diff);
-  if (!(t3 > 0)) return { error: "Enter the 3 km time, e.g. 12:30" };
-  if (isNaN(d)) return { error: "Offset should be seconds, e.g. 15 or -5" };
-  const km = t3 / 3 + d;
-  if (!(km > 0)) return { error: "Offset makes the pace zero or negative" };
-  return { base: t3 / 3, km, m400: km * 0.4, m200: km * 0.2, m100: km * 0.1 };
+  const t = parseTime(a[DISTS[dist].field]), d = parseDiff(a.diff);
+  if (!(t > 0)) return { error: "errT3" };
+  if (isNaN(d)) return { error: "errDiff" };
+  const base = t / (dist / 1000), km = base + d;
+  if (!(km > 0)) return { error: "errNeg" };
+  return { base, km, m400: km * 0.4, m200: km * 0.2, m100: km * 0.1 };
 }
 
 const lanesEl = document.getElementById("lanes");
 
 function laneHTML(a, i) {
+  const t = T[lang];
   return `
   <article class="lane" data-i="${i}">
     <div class="lane-no" aria-hidden="true">${i + 1}</div>
     <div class="inputs">
       <div class="field">
-        <label for="name-${i}">Athlete</label>
-        <input class="name" id="name-${i}" data-k="name" value="${escapeHtml(a.name)}" placeholder="Name" autocomplete="off">
+        <label for="name-${i}">${t.athlete}</label>
+        <input class="name" id="name-${i}" data-k="name" value="${escapeHtml(a.name)}" placeholder="${t.namePh}" autocomplete="off">
       </div>
       <div class="row2">
         <div class="field">
-          <label for="t3-${i}">3 km time</label>
-          <input id="t3-${i}" data-k="t3" value="${escapeHtml(a.t3)}" placeholder="12:30" inputmode="decimal" autocomplete="off">
+          <label for="t3-${i}">${t.tTime(dist)}</label>
+          <input id="t3-${i}" data-k="${DISTS[dist].field}" value="${escapeHtml(a[DISTS[dist].field])}" placeholder="${DISTS[dist].ph}" inputmode="decimal" autocomplete="off">
         </div>
         <div class="field">
-          <label for="diff-${i}">Offset s/km</label>
+          <label for="diff-${i}">${t.diff}</label>
           <input id="diff-${i}" data-k="diff" value="${escapeHtml(a.diff)}" placeholder="+15" inputmode="text" autocomplete="off">
         </div>
       </div>
@@ -187,27 +252,28 @@ function laneHTML(a, i) {
     <div class="splits" id="splits-${i}"></div>
     <div class="lane-actions">
       <span id="base-${i}"></span>
-      <button class="ghost" type="button" data-remove="${i}">Remove</button>
+      <button class="ghost" type="button" data-remove="${i}">${t.remove}</button>
     </div>
   </article>`;
 }
 function escapeHtml(s) { return String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
 
 function renderSplits(i) {
+  const t = T[lang];
   const r = calc(athletes[i]);
   const box = document.getElementById(`splits-${i}`);
   const base = document.getElementById(`base-${i}`);
   const t3In = document.getElementById(`t3-${i}`);
   const dIn = document.getElementById(`diff-${i}`);
-  t3In.setAttribute("aria-invalid", String(!(parseTime(athletes[i].t3) > 0)));
+  t3In.setAttribute("aria-invalid", String(!(parseTime(athletes[i][DISTS[dist].field]) > 0)));
   dIn.setAttribute("aria-invalid", String(isNaN(parseDiff(athletes[i].diff))));
-  if (r.error) { box.innerHTML = `<div class="err">${r.error}</div>`; base.textContent = ""; return; }
+  if (r.error) { box.innerHTML = `<div class="err">${typeof t[r.error] === "function" ? t[r.error](dist) : t[r.error]}</div>`; base.textContent = ""; return; }
   box.innerHTML = `
-    <div class="split"><span class="dist">1 km</span><span class="t">${fmt(r.km, 0)}</span><span class="sub">pace</span></div>
-    <div class="split lap"><span class="dist">400 m</span><span class="t">${fmt(r.m400, 1)}</span><span class="sub">1 lap</span></div>
-    <div class="split"><span class="dist">200 m</span><span class="t">${fmt(r.m200, 1)}</span><span class="sub">½ lap</span></div>
-    <div class="split"><span class="dist">100 m</span><span class="t">${fmt(r.m100, 1)}</span><span class="sub">¼ lap</span></div>`;
-  base.textContent = `Race pace ${fmt(r.base, 0)}/km · ${fmt(r.base * 0.4, 1)}/lap`;
+    <div class="split"><span class="dist">1 km</span><span class="t">${fmt(r.km, 0)}</span><span class="sub">${t.pace}</span></div>
+    <div class="split lap"><span class="dist">400 m</span><span class="t">${fmt(r.m400, 1)}</span><span class="sub">${t.lap}</span></div>
+    <div class="split"><span class="dist">200 m</span><span class="t">${fmt(r.m200, 1)}</span><span class="sub">${t.half}</span></div>
+    <div class="split"><span class="dist">100 m</span><span class="t">${fmt(r.m100, 1)}</span><span class="sub">${t.quarter}</span></div>`;
+  base.textContent = t.base(fmt(r.base, 0), fmt(r.base * 0.4, 1));
 }
 
 function render() {
@@ -215,6 +281,30 @@ function render() {
   athletes.forEach((_, i) => renderSplits(i));
 }
 
+function applyLang() {
+  const t = T[lang];
+  document.documentElement.lang = lang;
+  document.title = t.pageTitle;
+  document.querySelectorAll("[data-t]").forEach(el => { el.innerHTML = t[el.dataset.t]; });
+  lanesEl.setAttribute("aria-label", t.lanes);
+  document.querySelectorAll("[data-lang]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+  document.querySelectorAll("[data-dist]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.dist === dist)));
+  if (usingSample) athletes = sampleAthletes();
+  render();
+}
+
+document.querySelector(".lang").addEventListener("click", e => {
+  const l = e.target.dataset.lang; if (!l || l === lang) return;
+  lang = l;
+  try { localStorage.setItem(LANG_KEY, lang); } catch {}
+  applyLang();
+});
+document.querySelector(".dist-switch").addEventListener("click", e => {
+  const d = e.target.dataset.dist; if (!d || d === dist) return;
+  dist = d;
+  try { localStorage.setItem(DIST_KEY, dist); } catch {}
+  applyLang();
+});
 lanesEl.addEventListener("input", e => {
   const k = e.target.dataset.k; if (!k) return;
   const i = +e.target.closest(".lane").dataset.i;
@@ -227,11 +317,11 @@ lanesEl.addEventListener("click", e => {
   athletes.splice(+r, 1); save(); render();
 });
 document.getElementById("add").addEventListener("click", () => {
-  athletes.push({ name: "", t3: "", diff: "0" }); save(); render();
+  athletes.push({ name: "", t3: "", t15: "", diff: "0" }); save(); render();
   document.getElementById(`name-${athletes.length - 1}`).focus();
 });
 
-render();
+applyLang();
 </script>
 </body>
 </html>
