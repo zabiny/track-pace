@@ -92,7 +92,12 @@ button.primary { background: var(--fg); color: var(--bg); border-color: var(--fg
 @media (max-width: 620px) {
   .lane { grid-template-columns: 36px minmax(0,1fr); }
   .lane-no { grid-row: span 3; font-size: 22px; }
-  .splits { border-left: none; border-top: 1px solid var(--line); }
+  .splits { border-left: none; border-top: 1px solid var(--line); grid-template-columns: repeat(2, minmax(0,1fr)); }
+  .split + .split { border-left: none; }
+  .split:nth-child(even) { border-left: 1px dashed var(--line); }
+  .split:nth-child(n+3) { border-top: 1px dashed var(--line); }
+  .split { padding: 10px 6px; }
+  .split .t { font-size: 24px; }
   .lane-actions { grid-column: 2; }
 }
 @media (prefers-reduced-motion: no-preference) {
