@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Track Pace Splits</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: one column of athlete "lanes"; each lane = inputs left, split readouts right; stacks on phone */
+:root {
+  --bg: #f3f1ef;
+  --surface: #ffffff;
+  --fg: #1d1a19;
+  --muted: #6c6461;
+  --line: #ddd6d2;
+  --tartan: #b8432f;
+  --tartan-soft: #f6e3de;
+  --lane: #ffffff;
+  --display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --body: "Barlow", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #171413; --surface: #221e1c; --fg: #f1ece9; --muted: #a59a95;
+    --line: #3a3330; --tartan: #e0664f; --tartan-soft: #3a221c; --lane: #f1ece9;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #171413; --surface: #221e1c; --fg: #f1ece9; --muted: #a59a95;
+  --line: #3a3330; --tartan: #e0664f; --tartan-soft: #3a221c; --lane: #f1ece9;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.45; }
+.wrap { max-width: 860px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 48px; display: grid; gap: 20px; }
+
+header { display: grid; gap: 6px; }
+.eyebrow { font-family: var(--display); font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--tartan); font-size: 14px; }
+h1 { font-family: var(--display); font-weight: 700; font-size: clamp(34px, 7vw, 52px); line-height: 1; margin: 0; text-wrap: balance; }
+.lede { color: var(--muted); margin: 0; max-width: 62ch; }
+
+.lanes { display: grid; gap: 12px; }
+.lane {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+  display: grid; grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1.25fr); overflow: hidden;
+}
+.lane-no {
+  background: var(--tartan); color: var(--lane); font-family: var(--display); font-weight: 700;
+  font-size: 28px; display: grid; place-items: center;
+  background-image: repeating-linear-gradient(0deg, transparent 0 22px, rgba(255,255,255,.18) 22px 24px);
+}
+.inputs { padding: 14px; display: grid; gap: 10px; align-content: start; }
+.field { display: grid; gap: 4px; }
+.field label { font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; font-size: 13px; color: var(--muted); }
+.field input {
+  font: 500 17px var(--mono); color: var(--fg); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; width: 100%;
+}
+.field input.name { font-family: var(--body); font-weight: 500; }
+.field input:focus-visible { outline: 2px solid var(--tartan); outline-offset: 1px; border-color: transparent; }
+.field input[aria-invalid="true"] { border-color: var(--tartan); }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.hint { font-size: 12px; color: var(--muted); }
+
+.splits { border-left: 1px solid var(--line); display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); }
+.split { padding: 14px 10px; display: grid; align-content: center; justify-items: center; gap: 2px; text-align: center; }
+.split + .split { border-left: 1px dashed var(--line); }
+.split .dist { font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .1em; font-size: 13px; color: var(--muted); }
+.split .t { font: 700 clamp(22px, 4.2vw, 30px) var(--mono); font-variant-numeric: tabular-nums; }
+.split.lap { background: var(--tartan-soft); }
+.split.lap .t { color: var(--tartan); }
+.split .sub { font-size: 12px; color: var(--muted); }
+.err { grid-column: 1 / -1; padding: 14px; color: var(--tartan); font-size: 14px; align-self: center; text-align: center; }
+
+.lane-actions { grid-column: 2 / -1; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; padding: 6px 14px; font-size: 13px; color: var(--muted); gap: 8px; flex-wrap: wrap; }
+button {
+  font: 600 14px var(--display); letter-spacing: .08em; text-transform: uppercase; cursor: pointer;
+  border-radius: 4px; padding: 8px 14px; border: 1px solid var(--line); background: transparent; color: var(--fg);
+}
+button:hover { border-color: var(--fg); }
+button:focus-visible { outline: 2px solid var(--tartan); outline-offset: 2px; }
+button.ghost { border: none; padding: 4px 6px; color: var(--muted); }
+button.ghost:hover { color: var(--tartan); }
+button.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); justify-self: start; }
+
+.note { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 4px; }
+.note b { color: var(--fg); font-weight: 500; }
+
+@media (max-width: 620px) {
+  .lane { grid-template-columns: 36px minmax(0,1fr); }
+  .lane-no { grid-row: span 3; font-size: 22px; }
+  .splits { border-left: none; border-top: 1px solid var(--line); }
+  .lane-actions { grid-column: 2; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .split .t { transition: color .2s; }
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">400 m track · training splits</div>
+    <h1>Track Pace Splits</h1>
+    <p class="lede">Enter each athlete's 3 km time and how many seconds per km slower (+) or faster (−) today's session should be. Splits update as you type.</p>
+  </header>
+
+  <section class="lanes" id="lanes" aria-label="Athletes"></section>
+
+  <button class="primary" id="add" type="button">+ Add athlete</button>
+
+  <div class="note">
+    <div><b>How it's counted:</b> base pace = 3 km time ÷ 3. Training pace per km = base + offset. 400 m lap = 0.4 × km pace, 200 m = 0.2 × km pace.</div>
+    <div>Time formats: <b>12:30</b>, <b>12:30.5</b> or seconds like <b>750</b>. Your list is kept in this browser only.</div>
+  </div>
+</div>
+
+<script>
+const KEY = "track-pace-v1";
+const SAMPLE = [
+  { name: "Example: Jana", t3: "12:30", diff: "15" },
+  { name: "Example: Petr", t3: "10:45", diff: "-5" },
+];
+let athletes;
+try { athletes = JSON.parse(localStorage.getItem(KEY)) || SAMPLE; } catch { athletes = SAMPLE; }
+athletes = athletes.map(a => ({ ...a }));
+
+function save() { try { localStorage.setItem(KEY, JSON.stringify(athletes)); } catch {} }
+
+function parseTime(s) {
+  s = String(s).trim().replace(",", ".");
+  if (!s) return NaN;
+  const parts = s.split(":");
+  if (parts.length > 3 || parts.some(p => p === "" || isNaN(p))) return NaN;
+  return parts.reduce((acc, p) => acc * 60 + parseFloat(p), 0);
+}
+function parseDiff(s) {
+  s = String(s).trim().replace(",", ".").replace("−", "-");
+  if (!s) return 0;
+  const neg = s.startsWith("-");
+  const v = parseTime(s.replace(/^[+-]/, ""));
+  return neg ? -v : v;
+}
+function fmt(sec, decimals) {
+  const f = 10 ** decimals;
+  const r = Math.round(sec * f) / f;
+  const m = Math.floor(r / 60);
+  const s = r - m * 60;
+  const ss = s.toFixed(decimals).padStart(decimals ? 3 + decimals : 2, "0");
+  return m ? `${m}:${ss}` : `${ss}`;
+}
+function calc(a) {
+  const t3 = parseTime(a.t3), d = parseDiff(a.diff);
+  if (!(t3 > 0)) return { error: "Enter the 3 km time, e.g. 12:30" };
+  if (isNaN(d)) return { error: "Offset should be seconds, e.g. 15 or -5" };
+  const km = t3 / 3 + d;
+  if (!(km > 0)) return { error: "Offset makes the pace zero or negative" };
+  return { base: t3 / 3, km, m400: km * 0.4, m200: km * 0.2 };
+}
+
+const lanesEl = document.getElementById("lanes");
+
+function laneHTML(a, i) {
+  return `
+  <article class="lane" data-i="${i}">
+    <div class="lane-no" aria-hidden="true">${i + 1}</div>
+    <div class="inputs">
+      <div class="field">
+        <label for="name-${i}">Athlete</label>
+        <input class="name" id="name-${i}" data-k="name" value="${escapeHtml(a.name)}" placeholder="Name" autocomplete="off">
+      </div>
+      <div class="row2">
+        <div class="field">
+          <label for="t3-${i}">3 km time</label>
+          <input id="t3-${i}" data-k="t3" value="${escapeHtml(a.t3)}" placeholder="12:30" inputmode="decimal" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="diff-${i}">Offset s/km</label>
+          <input id="diff-${i}" data-k="diff" value="${escapeHtml(a.diff)}" placeholder="+15" inputmode="text" autocomplete="off">
+        </div>
+      </div>
+    </div>
+    <div class="splits" id="splits-${i}"></div>
+    <div class="lane-actions">
+      <span id="base-${i}"></span>
+      <button class="ghost" type="button" data-remove="${i}">Remove</button>
+    </div>
+  </article>`;
+}
+function escapeHtml(s) { return String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+function renderSplits(i) {
+  const r = calc(athletes[i]);
+  const box = document.getElementById(`splits-${i}`);
+  const base = document.getElementById(`base-${i}`);
+  const t3In = document.getElementById(`t3-${i}`);
+  const dIn = document.getElementById(`diff-${i}`);
+  t3In.setAttribute("aria-invalid", String(!(parseTime(athletes[i].t3) > 0)));
+  dIn.setAttribute("aria-invalid", String(isNaN(parseDiff(athletes[i].diff))));
+  if (r.error) { box.innerHTML = `<div class="err">${r.error}</div>`; base.textContent = ""; return; }
+  box.innerHTML = `
+    <div class="split"><span class="dist">1 km</span><span class="t">${fmt(r.km, 0)}</span><span class="sub">pace</span></div>
+    <div class="split lap"><span class="dist">400 m</span><span class="t">${fmt(r.m400, 1)}</span><span class="sub">1 lap</span></div>
+    <div class="split"><span class="dist">200 m</span><span class="t">${fmt(r.m200, 1)}</span><span class="sub">½ lap</span></div>`;
+  base.textContent = `Race pace ${fmt(r.base, 0)}/km · ${fmt(r.base * 0.4, 1)}/lap`;
+}
+
+function render() {
+  lanesEl.innerHTML = athletes.map(laneHTML).join("");
+  athletes.forEach((_, i) => renderSplits(i));
+}
+
+lanesEl.addEventListener("input", e => {
+  const k = e.target.dataset.k; if (!k) return;
+  const i = +e.target.closest(".lane").dataset.i;
+  athletes[i][k] = e.target.value;
+  if (k !== "name") renderSplits(i);
+  save();
+});
+lanesEl.addEventListener("click", e => {
+  const r = e.target.dataset.remove; if (r === undefined) return;
+  athletes.splice(+r, 1); save(); render();
+});
+document.getElementById("add").addEventListener("click", () => {
+  athletes.push({ name: "", t3: "", diff: "0" }); save(); render();
+  document.getElementById(`name-${athletes.length - 1}`).focus();
+});
+
+render();
+</script>
+</body>
+</html>
