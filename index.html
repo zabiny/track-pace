@@ -4,42 +4,45 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Tempo na dráze</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="icon" type="image/svg+xml" href="frog.svg">
 <style>
 /* Layout: one column of athlete "lanes"; each lane = inputs left, split readouts right; stacks on phone */
 :root {
-  --bg: #f3f1ef;
+  /* palette derived from club red CMYK 15/100/100/10 = #AB262A */
+  --brand: #AB262A;
+  --on-brand: #ffffff;
+  --bg: #f7f3f3;
   --surface: #ffffff;
-  --fg: #1d1a19;
-  --muted: #6c6461;
-  --line: #ddd6d2;
-  --tartan: #b8432f;
-  --tartan-soft: #f6e3de;
+  --fg: #1f1516;
+  --muted: #6f5d5e;
+  --line: #e4d8d8;
+  --tartan: #AB262A;
+  --tartan-soft: #f8e4e4;
   --lane: #ffffff;
-  --display: "Barlow Condensed", "Arial Narrow", sans-serif;
-  --body: "Barlow", system-ui, sans-serif;
-  --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --logo-filter: none;
+  --headline: "Segoe UI", -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --display: var(--headline);
+  --body: var(--headline);
+  --mono: var(--headline);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #171413; --surface: #221e1c; --fg: #f1ece9; --muted: #a59a95;
-    --line: #3a3330; --tartan: #e0664f; --tartan-soft: #3a221c; --lane: #f1ece9;
+    --bg: #170f10; --surface: #231819; --fg: #f5eded; --muted: #ab9697;
+    --line: #3e2c2d; --tartan: #e2676a; --tartan-soft: #3b1b1d; --lane: #ffffff; --logo-filter: invert(1);
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #171413; --surface: #221e1c; --fg: #f1ece9; --muted: #a59a95;
-  --line: #3a3330; --tartan: #e0664f; --tartan-soft: #3a221c; --lane: #f1ece9;
+  --bg: #170f10; --surface: #231819; --fg: #f5eded; --muted: #ab9697;
+    --line: #3e2c2d; --tartan: #e2676a; --tartan-soft: #3b1b1d; --lane: #ffffff; --logo-filter: invert(1);
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
-body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.45; }
+body { font-variant-numeric: tabular-nums; background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.45; }
 .wrap { max-width: 860px; margin: 0 auto; padding-inline: 16px; padding-block: 28px 48px; display: grid; gap: 20px; }
 
 header { display: grid; gap: 6px; }
-.eyebrow { font-family: var(--display); font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--tartan); font-size: 14px; }
-h1 { font-family: var(--display); font-weight: 700; font-size: clamp(34px, 7vw, 52px); line-height: 1; margin: 0; text-wrap: balance; }
+h1 { font-family: var(--headline); font-weight: 700; font-style: italic; text-transform: uppercase; letter-spacing: .01em; font-size: clamp(32px, 6.5vw, 46px); line-height: 1.05; margin: 0; text-wrap: balance; }
 .lede { color: var(--muted); margin: 0; max-width: 62ch; }
 
 .lanes { display: grid; gap: 12px; }
@@ -48,7 +51,7 @@ h1 { font-family: var(--display); font-weight: 700; font-size: clamp(34px, 7vw, 
   display: grid; grid-template-columns: 44px minmax(0, 1fr) minmax(0, 1.7fr); overflow: hidden;
 }
 .lane-no {
-  background: var(--tartan); color: var(--lane); font-family: var(--display); font-weight: 700;
+  background: var(--brand); color: var(--on-brand); font-family: var(--display); font-weight: 700;
   font-size: 28px; display: grid; place-items: center;
   background-image: repeating-linear-gradient(0deg, transparent 0 22px, rgba(255,255,255,.18) 22px 24px);
 }
@@ -62,10 +65,16 @@ h1 { font-family: var(--display); font-weight: 700; font-size: clamp(34px, 7vw, 
 .field input.name { font-family: var(--body); font-weight: 500; }
 .field input:focus-visible { outline: 2px solid var(--tartan); outline-offset: 1px; border-color: transparent; }
 .field input[aria-invalid="true"] { border-color: var(--tartan); }
-.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end; }
+.field .hint { margin-top: -2px; }
+.bulk input { width: 5.5em; font: 500 16px var(--mono); color: var(--fg); background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 6px 8px; }
+.bulk input:focus-visible { outline: 2px solid var(--tartan); outline-offset: 1px; }
+.bulk input[aria-invalid="true"] { border-color: var(--tartan); }
+.bulk .done { font-size: 13px; color: var(--muted); }
 .with-btn { display: flex; gap: 6px; }
 .with-btn input { min-width: 0; }
-.with-btn button { padding: 0 12px; font: 700 18px var(--mono); flex: none; }
+.with-btn button { padding: 0 12px; flex: none; }
+.with-btn button[data-sign], #all-sign { font-size: 18px; }
 .hint { font-size: 12px; color: var(--muted); }
 
 .splits { border-left: 1px solid var(--line); display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); }
@@ -87,7 +96,7 @@ button:hover { border-color: var(--fg); }
 button:focus-visible { outline: 2px solid var(--tartan); outline-offset: 2px; }
 button.ghost { border: none; padding: 4px 6px; color: var(--muted); }
 button.ghost:hover { color: var(--tartan); }
-button.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); justify-self: start; }
+button.primary { background: var(--brand); color: var(--on-brand); border-color: var(--brand); justify-self: start; }
 
 .note { font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 4px; }
 .note b { color: var(--fg); font-weight: 500; }
@@ -107,12 +116,16 @@ button.primary { background: var(--fg); color: var(--bg); border-color: var(--fg
   .split .t { transition: color .2s; }
 }
 
-.topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.brand { display: inline-flex; line-height: 0; }
+.brand img { height: 40px; width: auto; filter: var(--logo-filter); }
+.brand:focus-visible { outline: 2px solid var(--tartan); outline-offset: 4px; border-radius: 2px; }
+.topbar { margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
 .seg { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .seg-label { font-family: var(--display); font-weight: 600; text-transform: uppercase; letter-spacing: .08em; font-size: 13px; color: var(--muted); }
 .lang, .dist-switch { display: inline-flex; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
 .lang button, .dist-switch button { border: none; border-radius: 0; padding: 5px 10px; font-size: 13px; color: var(--muted); }
-.lang button[aria-pressed="true"], .dist-switch button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.lang button[aria-pressed="true"], .dist-switch button[aria-pressed="true"] { background: var(--brand); color: var(--on-brand); }
+.field label, .seg-label, .split .dist, button { font-style: italic; font-weight: 700; letter-spacing: .03em; }
 </style>
 </head>
 <body>
@@ -120,7 +133,7 @@ button.primary { background: var(--fg); color: var(--bg); border-color: var(--fg
 <div class="wrap">
   <header>
     <div class="topbar">
-      <div class="eyebrow" data-t="eyebrow"></div>
+      <a class="brand" href="https://zabiny.club" target="_blank" rel="noopener"><img src="logo.svg" alt="SK Brno Žabovřesky"></a>
       <div class="lang" role="group" aria-label="Language / Jazyk">
         <button type="button" data-lang="cs">CZ</button>
         <button type="button" data-lang="en">EN</button>
@@ -134,6 +147,15 @@ button.primary { background: var(--fg); color: var(--bg); border-color: var(--fg
         <button type="button" data-dist="3000">3000 m</button>
         <button type="button" data-dist="1500">1500 m</button>
       </div>
+    </div>
+    <div class="seg bulk">
+      <label class="seg-label" for="all-diff" data-t="allLabel"></label>
+      <div class="with-btn">
+        <input id="all-diff" inputmode="decimal" placeholder="15" autocomplete="off">
+        <button type="button" id="all-sign" data-t-aria="sign">±</button>
+        <button type="button" id="all-apply" data-t="allApply"></button>
+      </div>
+      <span class="done" id="all-done" role="status"></span>
     </div>
   </header>
 
@@ -155,16 +177,15 @@ const DISTS = { 3000: { field: "t3", ph: "12:30" }, 1500: { field: "t15", ph: "5
 const T = {
   cs: {
     pageTitle: "Tempo na dráze",
-    eyebrow: "Dráha 400 m · tréninkové úseky",
     title: "Tempo na dráze",
     lede: "Zadej svůj čas na 3000 m nebo 1500 m a o kolik sekund na km má být dnešní trénink pomalejší (+) nebo rychlejší (−). Časy se přepočítají hned při psaní.",
     add: "+ Přidat běžce",
     how: "<b>Jak se počítá:</b> základní tempo = čas na zvolenou trať ÷ její délka v km (3 nebo 1,5). Tréninkové tempo na km = základ + odchylka. Kolo 400 m = 0,4 × tempo na km, 200 m = 0,2 ×, 100 m = 0,1 ×.",
     formats: "Čas stačí psát jen číslicemi: <b>1230</b> = 12:30, <b>1230,5</b> = 12:30,5. Dvojtečka funguje taky. Znaménko odchylky přepneš tlačítkem <b>±</b>. Seznam se ukládá jen v tomto prohlížeči na tomto zařízení. Nikdo jiný ho nevidí a nic se neposílá na server.",
-    lanes: "Běžci", athlete: "Běžec", namePh: "Jméno", tTime: d => `Čas na ${d} m`, distLabel: "Základní trať", diff: "Odchylka s/km", remove: "Odebrat", sign: "Změnit znaménko (pomaleji / rychleji)",
+    lanes: "Běžci", athlete: "Běžec", namePh: "Jméno", tTime: d => `Čas na ${d} m`, distLabel: "Základní trať", diff: "Odchylka s/km", remove: "Odebrat", timeHint: ph => `bez dvojtečky: ${ph.replace(":", "")}`, diffHint: "+ pomaleji, − rychleji", allLabel: "Odchylka pro všechny", allApply: "Nastavit všem", allDone: n => `Nastaveno ${n} běžcům`, sign: "Změnit znaménko (pomaleji / rychleji)",
     pace: "tempo", lap: "1 kolo", half: "½ kola", quarter: "¼ kola",
     base: (km, lap) => `Závodní tempo ${km}/km · ${lap}/kolo`,
-    errT3: d => `Zadej čas na ${d} m, např. ${DISTS[d].ph}`,
+    errT3: d => `Zadej čas na ${d} m, např. ${DISTS[d].ph.replace(":", "")}`,
     errDiff: "Odchylka v sekundách, např. 15 nebo -5",
     errNeg: "S touto odchylkou vychází nulové nebo záporné tempo",
     sample: "Příklad: Jana",
@@ -172,16 +193,15 @@ const T = {
   },
   en: {
     pageTitle: "Track Pace Splits",
-    eyebrow: "400 m track · training splits",
     title: "Track Pace Splits",
     lede: "Enter each athlete's 3000 m or 1500 m time and how many seconds per km slower (+) or faster (−) today's session should be. Splits update as you type.",
     add: "+ Add athlete",
     how: "<b>How it's counted:</b> base pace = time over the chosen distance ÷ its length in km (3 or 1.5). Training pace per km = base + offset. 400 m lap = 0.4 × km pace, 200 m = 0.2 ×, 100 m = 0.1 ×.",
     formats: "Type times as digits only: <b>1230</b> = 12:30, <b>1230.5</b> = 12:30.5. A colon works too. Flip the offset sign with the <b>±</b> button. Your list is saved only in this browser on this device. Nobody else can see it, and nothing is sent to a server.",
-    lanes: "Athletes", athlete: "Athlete", namePh: "Name", tTime: d => `${d} m time`, distLabel: "Base distance", diff: "Offset s/km", remove: "Remove", sign: "Flip sign (slower / faster)",
+    lanes: "Athletes", athlete: "Athlete", namePh: "Name", tTime: d => `${d} m time`, distLabel: "Base distance", diff: "Offset s/km", remove: "Remove", timeHint: ph => `no colon: ${ph.replace(":", "")}`, diffHint: "+ slower, − faster", allLabel: "Offset for everyone", allApply: "Set for all", allDone: n => `Set for ${n} runners`, sign: "Flip sign (slower / faster)",
     pace: "pace", lap: "1 lap", half: "½ lap", quarter: "¼ lap",
     base: (km, lap) => `Race pace ${km}/km · ${lap}/lap`,
-    errT3: d => `Enter the ${d} m time, e.g. ${DISTS[d].ph}`,
+    errT3: d => `Enter the ${d} m time, e.g. ${DISTS[d].ph.replace(":", "")}`,
     errDiff: "Offset should be seconds, e.g. 15 or -5",
     errNeg: "Offset makes the pace zero or negative",
     sample: "Example: Jana",
@@ -257,12 +277,14 @@ function laneHTML(a, i) {
       <div class="row2">
         <div class="field">
           <label for="t3-${i}">${t.tTime(dist)}</label>
-          <input id="t3-${i}" data-k="${DISTS[dist].field}" value="${escapeHtml(a[DISTS[dist].field])}" placeholder="${DISTS[dist].ph}" inputmode="decimal" autocomplete="off" data-norm="1">
+          <span class="hint" id="t3h-${i}">${t.timeHint(DISTS[dist].ph)}</span>
+          <input id="t3-${i}" aria-describedby="t3h-${i}" data-k="${DISTS[dist].field}" value="${escapeHtml(a[DISTS[dist].field])}" placeholder="${DISTS[dist].ph.replace(":", "")}" inputmode="decimal" autocomplete="off" data-norm="1">
         </div>
         <div class="field">
           <label for="diff-${i}">${t.diff}</label>
+          <span class="hint" id="diffh-${i}">${t.diffHint}</span>
           <div class="with-btn">
-            <input id="diff-${i}" data-k="diff" value="${escapeHtml(a.diff)}" placeholder="15" inputmode="decimal" autocomplete="off">
+            <input id="diff-${i}" aria-describedby="diffh-${i}" data-k="diff" value="${escapeHtml(a.diff)}" placeholder="15" inputmode="decimal" autocomplete="off">
             <button type="button" data-sign="${i}" aria-label="${t.sign}">±</button>
           </div>
         </div>
@@ -305,6 +327,8 @@ function applyLang() {
   document.documentElement.lang = lang;
   document.title = t.pageTitle;
   document.querySelectorAll("[data-t]").forEach(el => { el.innerHTML = t[el.dataset.t]; });
+  document.querySelectorAll("[data-t-aria]").forEach(el => el.setAttribute("aria-label", t[el.dataset.tAria]));
+  document.getElementById("all-done").textContent = "";
   lanesEl.setAttribute("aria-label", t.lanes);
   document.querySelectorAll("[data-lang]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
   document.querySelectorAll("[data-dist]").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.dist === dist)));
@@ -323,6 +347,19 @@ document.querySelector(".dist-switch").addEventListener("click", e => {
   dist = d;
   try { localStorage.setItem(DIST_KEY, dist); } catch {}
   applyLang();
+});
+const allIn = document.getElementById("all-diff");
+document.getElementById("all-sign").addEventListener("click", () => {
+  const v = allIn.value.trim();
+  allIn.value = v.startsWith("-") ? v.slice(1) : "-" + v.replace(/^\+/, "");
+});
+document.getElementById("all-apply").addEventListener("click", () => {
+  const v = allIn.value.trim(), ok = !isNaN(parseDiff(v));
+  allIn.setAttribute("aria-invalid", String(!ok));
+  if (!ok) return;
+  athletes.forEach(a => { a.diff = v || "0"; });
+  save(); render();
+  document.getElementById("all-done").textContent = T[lang].allDone(athletes.length);
 });
 lanesEl.addEventListener("input", e => {
   const k = e.target.dataset.k; if (!k) return;
